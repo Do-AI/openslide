@@ -69,6 +69,7 @@ static const char ATTR_OVERLAP_X[] = "OverlapX";
 static const char ATTR_OVERLAP_Y[] = "OverlapY";
 static const char DIRECTION_RIGHT[] = "RIGHT";
 static const char DIRECTION_UP[] = "UP";
+static const char DIRECTION_LEFT[] = "LEFT";
 
 #define PARSE_INT_ATTRIBUTE_OR_FAIL(NODE, NAME, OUT)		\
   do {								\
@@ -130,6 +131,7 @@ struct joint {
 struct tile {
   struct joint left;
   struct joint top;
+  struct joint right;
 };
 
 static void destroy(openslide_t *osr) {
@@ -585,7 +587,13 @@ static struct bif *parse_level0_xml(const char *xml,
         joint = &tile->top;
         ok = (tile2_col == tile1_col && tile2_row == tile1_row - 1);
         direction_y = true;
-      } else {
+      } else if (!xmlStrcmp(direction, BAD_CAST DIRECTION_LEFT)) {
+          struct tile *tile =
+                  area->tiles[tile2_row * area->tiles_across + tile2_col];
+          joint = &tile->right;
+          ok = (tile2_col == tile1_col + 1 && tile2_row == tile1_row);
+      }
+      else {
         g_set_error(err, OPENSLIDE_ERROR, OPENSLIDE_ERROR_FAILED,
                     "Bad direction attribute \"%s\"", (char *) direction);
         xmlFree(direction);
